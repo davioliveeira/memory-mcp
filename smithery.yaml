@@ -1,0 +1,19 @@
+# smithery.yaml
+# Smithery.ai configuration for Memory MCP
+
+startCommand:
+  type: stdio
+  # Sem nenhuma opção de configuração extra por enquanto
+  configSchema: {}
+  # Inicia seu servidor via STDIO chamando o CLI instalado no container
+  commandFunction: |-
+    (config) => ({
+      command: "memory-mcp",
+      args: [],
+      env: {}
+    })
+
+# Instruções de build: Dockerfile na raiz, contexto no diretório atual
+build:
+  dockerfile: Dockerfile
+  dockerBuildPath: .
