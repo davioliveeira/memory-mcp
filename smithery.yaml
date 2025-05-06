@@ -4,38 +4,40 @@
 startCommand:
   type: stdio
   configSchema:
-    type: object
+    type: "object"
+    additionalProperties: false
+    required: ["port", "database_path"]
     properties:
       port:
-        type: integer
+        type: "string"
         description: "Porta em que o servidor irá escutar"
-        default: 3000
+        default: "3000"
       database_path:
-        type: string
+        type: "string"
         description: "Caminho para o arquivo do banco de dados SQLite"
         default: "/data/memories.db"
       log_level:
-        type: string
-        enum: ["DEBUG", "INFO", "WARNING", "ERROR"]
+        type: "string"
         description: "Nível de log do servidor"
+        enum: ["DEBUG", "INFO", "WARNING", "ERROR"]
         default: "INFO"
       max_memories:
-        type: integer
+        type: "string"
         description: "Número máximo de memórias que podem ser armazenadas"
-        default: 1000
-    required: ["port", "database_path"]
+        default: "1000"
   
   commandFunction: |-
     (config) => ({
       command: "memory-mcp",
       args: [
-        "--port", config.port.toString(),
+        "--port", config.port,
         "--db-path", config.database_path,
-        "--log-level", config.log_level
+        "--log-level", config.log_level,
+        "--max-memories", config.max_memories
       ],
       env: {
-        PORT: config.port.toString(),
-        MAX_MEMORIES: config.max_memories.toString(),
+        PORT: config.port,
+        MAX_MEMORIES: config.max_memories,
         LOG_LEVEL: config.log_level
       }
     })
