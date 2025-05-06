@@ -2,25 +2,49 @@
 # Base em Debian slim com Python 3.11
 FROM python:3.11-slim
 
-# Variáveis de ambiente para comportamento Python
+# Configurações do Python e variáveis de ambiente
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on
 
-# Instala o gerenciador de dependências 'uv'
-RUN pip install --upgrade pip \
-    && pip install uv
+# Instala dependências do sistema e uv
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir uv
 
 # Define o diretório de trabalho
 WORKDIR /app
 
-# Copia apenas os arquivos de configuração para instalar dependências
+# Copia arquivos de configuração
 COPY pyproject.toml uv.lock ./
 
-# Instala o seu pacote e dependências bloqueadas
-RUN uv pip install .
+# Cria e ativa o ambiente virtual, então instala as dependências
+RUN uv venv /app/.venv && \
+    . /app/.venv/bin/activate && \
+    uv pip install --no-cache .
 
-# Copia todo o restante do código
-COPY . .
+# Copia o código da aplicação
+COPY memory_mcp ./memory_mcp
+COPY tests ./tests
 
-# Comando padrão: inicia o MCP via CLI
+# Usuário não-root para segurança
+RUN useradd -m -u 1000 mcp \
+    && chown -R mcp:mcp /app
+USER mcp
+
+# Configura o ambiente virtual no PATH
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Healthcheck para monitoramento
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
+
+# Comando para iniciar o servidor
 CMD ["memory-mcp"]

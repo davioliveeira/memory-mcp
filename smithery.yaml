@@ -1,19 +1,50 @@
 # smithery.yaml
-# Smithery.ai configuration for Memory MCP
+# Configuração do Memory MCP para Smithery.ai
 
 startCommand:
   type: stdio
-  # Sem nenhuma opção de configuração extra por enquanto
-  configSchema: {}
-  # Inicia seu servidor via STDIO chamando o CLI instalado no container
+  configSchema:
+    type: object
+    properties:
+      port:
+        type: integer
+        description: "Porta em que o servidor irá escutar"
+        default: 3000
+      database_path:
+        type: string
+        description: "Caminho para o arquivo do banco de dados SQLite"
+        default: "/data/memories.db"
+      log_level:
+        type: string
+        enum: ["DEBUG", "INFO", "WARNING", "ERROR"]
+        description: "Nível de log do servidor"
+        default: "INFO"
+      max_memories:
+        type: integer
+        description: "Número máximo de memórias que podem ser armazenadas"
+        default: 1000
+    required: ["port", "database_path"]
+  
   commandFunction: |-
     (config) => ({
       command: "memory-mcp",
-      args: [],
-      env: {}
+      args: [
+        "--port", config.port.toString(),
+        "--db-path", config.database_path,
+        "--log-level", config.log_level
+      ],
+      env: {
+        PORT: config.port.toString(),
+        MAX_MEMORIES: config.max_memories.toString(),
+        LOG_LEVEL: config.log_level
+      }
     })
 
-# Instruções de build: Dockerfile na raiz, contexto no diretório atual
 build:
   dockerfile: Dockerfile
   dockerBuildPath: .
+  
+  # Configurações adicionais de build
+  buildArgs:
+    PYTHON_VERSION: "3.11"
+    UV_VERSION: "latest"
